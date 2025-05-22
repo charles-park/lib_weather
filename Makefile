@@ -3,6 +3,8 @@
 #
 CC      = gcc
 CFLAGS  = -W -Wall -g
+CFLAGS  += -D__LIB_WEATHER_APP__
+CFLAGS  += -D__LIB_WEATHER_DEBUG__
 
 INCLUDE = -I/usr/local/include
 LDFLAGS = -L/usr/local/lib -lpthread -lcurl -lm -lcjson

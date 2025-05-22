@@ -13,7 +13,9 @@
  */
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
-#define WEATHER_URL_FORMAT "http://wttr.in/%s?format=j1"
+#define WEATHER_URL_FORMAT      "http://wttr.in/%s?format=j1"
+#define LOCATION_URL_FORMAT_KR  "https://nominatim.openstreetmap.org/reverse?format=json&lat=%f&lon=%f&zoom=10&accept-language=ko"
+#define LOCATION_URL_FORMAT_EN  "https://nominatim.openstreetmap.org/reverse?format=json&lat=%f&lon=%f&zoom=10&accept-language=en"
 #define DEFAULT_LOCATION ""
 
 //------------------------------------------------------------------------------
@@ -63,13 +65,13 @@ enum eWttrItem {
     eWTTR_END
 };
 
-#define ITEM_STR_SIZE   32
+#define WTTR_DATA_SIZE   32
 
 typedef struct wttr_data__t {
     enum eWttrItem id;
     const char **sub_class;
     const char *item_str;
-    char data_str [ITEM_STR_SIZE];
+    char data_str [WTTR_DATA_SIZE];
 
 }   wttr_data_t;
 
@@ -140,7 +142,13 @@ typedef struct wttr_data__t {
     ],
 #endif
 
-extern int request_weather (const char *location);
+//------------------------------------------------------------------------------
+extern void         get_location_json   (double lat, double lon, char *g_city, char *g_country, int is_kor);
+extern const char   *get_wttr_data      (enum eWttrItem id);
+//------------------------------------------------------------------------------
+// location = 지역명 (한글/영어)
+//------------------------------------------------------------------------------
+extern int          update_weather_data (const char *location);
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------

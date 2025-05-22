@@ -26,9 +26,6 @@
 #include "lib_weather.h"
 
 //------------------------------------------------------------------------------
-#define WEATHER_URL_FORMAT "http://wttr.in/%s?format=j1"
-#define DEFAULT_LOCATION ""
-
 //------------------------------------------------------------------------------
 // wttr.in data 구조
 //------------------------------------------------------------------------------
@@ -214,7 +211,6 @@ void date_to_korean (enum eDayItem d_item, void *i_time, char *k_str)
     time_t t = time(NULL);
     const char *weekday_korean[] = { "일요일", "월요일", "화요일", "수요일", "목요일", "금요일", "토요일" };
     const char *hour_korean[] = {"영", "한", "두", "세", "네", "다섯", "여섯", "일곱", "여덟", "아홉", "열", "열한", "열두"};
-//    char k_str[16] = { 0, };
 
     if (i_time == NULL) lt = localtime(&t);
     else                lt = (struct tm *)i_time;
@@ -273,12 +269,95 @@ static size_t WriteMemoryCallback(void *contents, size_t size, size_t nmemb, voi
 }
 
 //------------------------------------------------------------------------------
-// HTTP 요청
+// 위,경도 위치 요청
 //------------------------------------------------------------------------------
-char *get_weather_json(const char *location) {
-    CURL *curl_handle;
+void get_location_json (double lat, double lon, char *g_city, char *g_country, int is_kor)
+{
+    CURL *curl;
     CURLcode res;
     struct MemoryStruct chunk = {malloc(1), 0};
+    char url[512];
+
+    #if defined (__LIB_WEATHER_DEBUG__)
+        printf("lat = %f, lon = %f, is_kor = %d\n", lat, lon, is_kor);
+    #endif
+
+    snprintf (url, sizeof(url), is_kor ? LOCATION_URL_FORMAT_KR : LOCATION_URL_FORMAT_EN, lat, lon);
+
+    curl_global_init(CURL_GLOBAL_ALL);
+    if (!(curl = curl_easy_init())) return;
+
+    curl_easy_setopt(curl, CURLOPT_URL, url);
+    curl_easy_setopt(curl, CURLOPT_USERAGENT, "C-Geocoder/1.0");
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteMemoryCallback);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&chunk);
+    curl_easy_setopt(curl, CURLOPT_TIMEOUT, 10L);
+
+    if ((res = curl_easy_perform(curl)) != CURLE_OK) {
+        fprintf(stderr, "curl 요청 실패: %s\n", curl_easy_strerror(res));
+    } else {
+        cJSON *json = cJSON_Parse(chunk.memory);
+        if (json) {
+            cJSON *address = cJSON_GetObjectItemCaseSensitive(json, "address");
+            if (address) {
+                const char *city = NULL, *state = NULL, *country = NULL;
+
+                cJSON *fields_city[] = {
+                    cJSON_GetObjectItemCaseSensitive(address, "city"),
+                    cJSON_GetObjectItemCaseSensitive(address, "town"),
+                    cJSON_GetObjectItemCaseSensitive(address, "village"),
+                    cJSON_GetObjectItemCaseSensitive(address, "county")
+                };
+                for (int i = 0; i < 4; i++) {
+                    if (fields_city[i]) {
+                        city = fields_city[i]->valuestring;
+                        break;
+                    }
+                }
+
+                state = cJSON_GetObjectItemCaseSensitive(address, "state") ?
+                        cJSON_GetObjectItemCaseSensitive(address, "state")->valuestring : NULL;
+
+                country = cJSON_GetObjectItemCaseSensitive(address, "country") ?
+                          cJSON_GetObjectItemCaseSensitive(address, "country")->valuestring : NULL;
+
+                #if defined (__LIB_WEATHER_DEBUG__)
+                    printf("\n[위치 정보]\n");
+                    printf("도시:   %s\n", city ? city : "(정보 없음)");
+                    printf("지역:   %s\n", state ? state : "(정보 없음)");
+                    printf("국가:   %s\n", country ? country : "(정보 없음)");
+                #endif
+
+                memset  (g_city,       0,    strlen(city)+1);
+                strncpy (g_city,    city,    strlen(city));
+                memset  (g_country,    0,    strlen(country)+1);
+                strncpy (g_country, country, strlen(country));
+
+            } else {
+                fprintf(stderr, "주소 정보 없음\n");
+                memset  (g_city,       0,    1);
+                memset  (g_country,    0,    1);
+            }
+            cJSON_Delete(json);
+        } else {
+            fprintf(stderr, "JSON 파싱 실패\n");
+        }
+    }
+    free(chunk.memory);
+    curl_easy_cleanup(curl);
+}
+
+//------------------------------------------------------------------------------
+// HTTP 요청 (location = 지역명(한글/영어), "위도,경도")
+//------------------------------------------------------------------------------
+char *get_weather_json (const char *location) {
+    CURL *curl;
+    CURLcode res;
+    struct MemoryStruct chunk = {malloc(1), 0};
+
+    #if defined (__LIB_WEATHER_DEBUG__)
+        printf("입력지역: %s\n", location[0] ? location : "현위치");
+    #endif
 
     // location 인코딩 (한글/영문 지역 사용가능)
     char *encoded_location = url_encode(location && strlen(location) > 0 ? location : "");
@@ -288,24 +367,23 @@ char *get_weather_json(const char *location) {
     free(encoded_location);
 
     curl_global_init(CURL_GLOBAL_ALL);
-    curl_handle = curl_easy_init();
-    if (!curl_handle) return NULL;
+    if (!(curl = curl_easy_init())) return NULL;
 
-    curl_easy_setopt(curl_handle, CURLOPT_URL, url);
-    curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "Mozilla/5.0");
-    curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, WriteMemoryCallback);
-    curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *)&chunk);
-    curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT, 10L);
+    curl_easy_setopt(curl, CURLOPT_URL, url);
+    curl_easy_setopt(curl, CURLOPT_USERAGENT, "Mozilla/5.0");
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteMemoryCallback);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&chunk);
+    curl_easy_setopt(curl, CURLOPT_TIMEOUT, 10L);
 
-    curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 1L);
-    res = curl_easy_perform(curl_handle);
-    if (res != CURLE_OK) {
+    curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
+
+    if ((res = curl_easy_perform(curl)) != CURLE_OK) {
         free(chunk.memory);
-        curl_easy_cleanup(curl_handle);
+        curl_easy_cleanup(curl);
         return NULL;
     }
 
-    curl_easy_cleanup(curl_handle);
+    curl_easy_cleanup(curl);
     return chunk.memory;
 }
 
@@ -313,17 +391,13 @@ char *get_weather_json(const char *location) {
 //------------------------------------------------------------------------------
 // 날씨 파싱 및 출력
 //------------------------------------------------------------------------------
-void parse_weather(const char *json, const char *location)
+void parse_weather(const char *json)
 {
     cJSON *root = cJSON_Parse(json);
     if (!root) {
         fprintf(stderr, "JSON 파싱 실패\n");
         return;
     }
-
-    printf("입력지역: %s\n", location[0] ? location : "현위치");
-
-    printf("WttrData[0].sub_class = %s \n", *WttrData[0].sub_class);
 
     for (size_t i = 0; i < (sizeof (WttrData) / sizeof (WttrData[0])); i++) {
         cJSON *current = cJSON_GetObjectItem(root, *WttrData[i].sub_class);
@@ -355,31 +429,49 @@ void parse_weather(const char *json, const char *location)
                 strlen(cJSON_GetObjectItem(info, WttrData[i].item_str)->valuestring)
             );
         }
-        /* Data print */
-        printf ("%s : %s, %s, %s\n", __func__,
-            *WttrData[i].sub_class, WttrData[i].item_str, WttrData[i].data_str);
+        #if defined (__LIB_WEATHER_DEBUG__)
+            /* Data print */
+            printf ("%s : %s, %s, %s\n", __func__,
+                *WttrData[i].sub_class, WttrData[i].item_str, WttrData[i].data_str);
+        #endif
     }
 }
 
 //------------------------------------------------------------------------------
-int request_weather (const char *location)
+//------------------------------------------------------------------------------
+const char *get_wttr_data (enum eWttrItem id)
 {
-    char *encode = url_encode (location);
-    char *json = get_weather_json(encode);
+    size_t cnt;
 
-    setenv("TZ", "Asia/Seoul", 1);  // 타임존 설정
+    for (cnt = 0; cnt < sizeof (WttrData)/sizeof (WttrData[0]); cnt++) {
+        if (WttrData[cnt].id == id) return WttrData[cnt].data_str;
+    }
+    return NULL;
+}
+
+//------------------------------------------------------------------------------
+// location = 지역명 (한글/영어)
+//------------------------------------------------------------------------------
+int update_weather_data (const char *location)
+{
+    char *json = get_weather_json (location);
+
+//    setenv("TZ", "Asia/Seoul", 1);  // 타임존 설정
 
     if (!json) {
-        fprintf(stderr, "날씨 정보를 가져올 수 없습니다.\n");
-        return 1;
+        fprintf (stderr, "날씨 정보를 가져올 수 없습니다.\n");
+        return 0;
     }
-    printf("서버 응답 내용:\n%s\n", json);
+    #if defined (__LIB_WEATHER_DEBUG__)
+        printf ("서버 응답 내용:\n%s\n", json);
+    #endif
 
-    parse_weather(json, location);
-    free(encode);
+    parse_weather(json);
     free(json);
-    return 0;
+
+    return 1;
 }
+
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
