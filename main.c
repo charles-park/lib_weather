@@ -16,6 +16,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <time.h>
+
 //------------------------------------------------------------------------------
 #include "lib_weather.h"
 
@@ -57,6 +59,22 @@ int main(int argc, char *argv[]) {
             city, country, 0);
 
         printf ("English : city(%s), country(%s)\n", city, country);
+
+        char kor_str[WTTR_DATA_SIZE];
+
+        int_to_korean(atoi(get_wttr_data (eWTTR_TEMP_FEEL)), kor_str);
+        printf ("체감온도 : %s도씨\n", kor_str);
+
+        {
+            struct tm t;
+
+            get_wttr_date (get_wttr_data (eWTTR_LOBS_DATE), &t);
+            // void date_to_korean (enum eDayItem d_item, void *i_time, char *k_str)
+            date_to_korean (eDAY_HOUR, (void *)&t, kor_str);
+            printf ("측정시간 : %s시\n", kor_str);
+            date_to_korean (eDAY_HOUR, NULL, kor_str);
+            printf ("현재시간 : %s시\n", kor_str);
+        }
     }
     return 0;
 }

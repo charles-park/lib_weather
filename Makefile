@@ -6,7 +6,16 @@ CFLAGS  = -W -Wall -g
 CFLAGS  += -D__LIB_WEATHER_APP__
 CFLAGS  += -D__LIB_WEATHER_DEBUG__
 
+#
+# include <time.h>
+#
+# warning: implicit declaration of function ‘strptime’; did you mean ‘strftime’? [-Wimplicit-function-declaration]
+#
+CFLAGS  += -D__USE_XOPEN -D_GNU_SOURCE
+
 INCLUDE = -I/usr/local/include
+
+# apt install ibcurl4-openssl-dev libcjson-dev
 LDFLAGS = -L/usr/local/lib -lpthread -lcurl -lm -lcjson
 #
 # 기본적으로 Makefile은 indentation가 TAB 4로 설정되어있음.

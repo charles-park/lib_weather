@@ -18,9 +18,9 @@
 #include <ctype.h>
 #include <curl/curl.h>
 #include <cjson/cJSON.h>
-#include <time.h>
 #include <locale.h>
 #include <math.h>
+#include <time.h>
 
 //------------------------------------------------------------------------------
 #include "lib_weather.h"
@@ -178,7 +178,7 @@ void int_to_korean (int num, char* output) {
     int digit, pos;
 
     sprintf(buffer, "%d", num);
-    output[0] = '\0';
+    if (output) memset (output, 0, WTTR_DATA_SIZE);
 
     if (!num)   {
         sprintf (output, "%s", digits[0]);
@@ -209,11 +209,15 @@ void date_to_korean (enum eDayItem d_item, void *i_time, char *k_str)
 {
     struct tm *lt;
     time_t t = time(NULL);
-    const char *weekday_korean[] = { "일요일", "월요일", "화요일", "수요일", "목요일", "금요일", "토요일" };
+    const char *weekday_korean[] = { "일", "월", "화", "수", "목", "금", "토" };
     const char *hour_korean[] = {"영", "한", "두", "세", "네", "다섯", "여섯", "일곱", "여덟", "아홉", "열", "열한", "열두"};
+
+    setenv("TZ", "Asia/Seoul", 1);  // 타임존 설정
 
     if (i_time == NULL) lt = localtime(&t);
     else                lt = (struct tm *)i_time;
+
+    if (k_str)  memset (k_str, 0, WTTR_DATA_SIZE);
 
     switch (d_item) {
         case eDAY_AM_PM:
@@ -238,7 +242,6 @@ void date_to_korean (enum eDayItem d_item, void *i_time, char *k_str)
         default :
             break;
     }
-
 }
 
 //------------------------------------------------------------------------------
@@ -439,6 +442,46 @@ void parse_weather(const char *json)
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
+#if 0
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+int main() {
+    const char* datetime = "2025-05-14 14:42";
+
+    int year, month, day, hour, minute;
+    sscanf(datetime, "%d-%d-%d %d:%d", &year, &month, &day, &hour, &minute);
+
+    printf("%d년 %d월 %d일 %d시 %d분\n", year, month, day, hour, minute);
+
+    return 0;
+}
+
+    struct tm tm_info = {0};
+    strptime(time_str, "%Y-%m-%dT%H:%M", &tm_info);
+#endif
+
+void get_wttr_date (const char *obs_data, struct tm *t)
+{
+    // Local Obs Data : "2025-05-20 12:14 PM"
+    strptime (obs_data, "%Y-%m-%d %I:%M %p", t);
+    mktime (t);  // 자동으로 overflow 조정
+
+    #if defined (__LIB_WEATHER_DEBUG__)
+        printf("관측 시각: %d년 %d월 %d일 %d시 %d분 %d요일 %d일/356일\n",
+            t->tm_year + 1900,
+            t->tm_mon + 1,
+            t->tm_mday,
+            t->tm_hour,
+            t->tm_min,
+            t->tm_wday,
+            t->tm_yday + 1
+        );
+    #endif
+}
+
+//------------------------------------------------------------------------------
 const char *get_wttr_data (enum eWttrItem id)
 {
     size_t cnt;
@@ -455,8 +498,6 @@ const char *get_wttr_data (enum eWttrItem id)
 int update_weather_data (const char *location)
 {
     char *json = get_weather_json (location);
-
-//    setenv("TZ", "Asia/Seoul", 1);  // 타임존 설정
 
     if (!json) {
         fprintf (stderr, "날씨 정보를 가져올 수 없습니다.\n");
