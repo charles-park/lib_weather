@@ -26,6 +26,8 @@
 #include "lib_weather.h"
 
 //------------------------------------------------------------------------------
+char KorString [WTTR_DATA_SIZE];
+
 //------------------------------------------------------------------------------
 // wttr.in data 구조
 //------------------------------------------------------------------------------
@@ -172,7 +174,7 @@ char *url_encode (const char *str) {
 //------------------------------------------------------------------------------
 // 숫자를 한글로 출력
 //------------------------------------------------------------------------------
-void int_to_korean (int num, char* output) {
+void int_to_korean_buf (int num, char* output) {
     const char *digits[] = { "영", "일", "이", "삼", "사", "오", "육", "칠", "팔", "구" };
     char buffer[64] = "", temp[8];
     int digit, pos;
@@ -202,10 +204,41 @@ void int_to_korean (int num, char* output) {
     }
 }
 
+const char *int_to_korean (int num) {
+    const char *digits[] = { "영", "일", "이", "삼", "사", "오", "육", "칠", "팔", "구" };
+    char buffer[64] = "", temp[8];
+    int digit, pos;
+
+    sprintf(buffer, "%d", num);
+    memset (KorString, 0, WTTR_DATA_SIZE);
+
+    if (!num)   {
+        sprintf (KorString, "%s", digits[0]);
+        return (const char *)&KorString[0];
+    }
+
+    for (size_t i = 0, place = strlen(buffer); i < strlen(buffer); i++, place--) {
+        digit = buffer[i] - '0';
+        temp[0] = '\0';
+
+        if (digit) {
+            pos = (digit == 1) ? 0 : sprintf(temp, "%s", digits[digit]);
+            switch (place) {
+                case 5: sprintf(&temp[pos], "%s", "만");  break;
+                case 4: sprintf(&temp[pos], "%s", "천");  break;
+                case 3: sprintf(&temp[pos], "%s", "백");  break;
+                case 2: sprintf(&temp[pos], "%s", "십");  break;
+            }
+            strcat(KorString, temp);
+        }
+    }
+    return (const char *)&KorString[0];
+}
+
 //------------------------------------------------------------------------------
 // 현재시간이나 입력되어진 시간중 원하는 필드의 한글 값을 얻어온다.
 //------------------------------------------------------------------------------
-void date_to_korean (enum eDayItem d_item, void *i_time, char *k_str)
+void date_to_korean_buf (enum eDayItem d_item, void *i_time, char *k_str)
 {
     struct tm *lt;
     time_t t = time(NULL);
@@ -224,8 +257,8 @@ void date_to_korean (enum eDayItem d_item, void *i_time, char *k_str)
             strncpy (k_str, (lt->tm_hour < 12) ? "오전" : "오후", strlen ("오전"));
             break;
 
-        case eDAY_SEC:      int_to_korean(lt->tm_sec, k_str);           break;
-        case eDAY_MIN:      int_to_korean(lt->tm_min, k_str);           break;
+        case eDAY_SEC:      int_to_korean_buf (lt->tm_sec, k_str);           break;
+        case eDAY_MIN:      int_to_korean_buf (lt->tm_min, k_str);           break;
 
         case eDAY_HOUR:
             int hour = (lt->tm_hour == 12) ? 12 : lt->tm_hour % 12;
@@ -236,12 +269,52 @@ void date_to_korean (enum eDayItem d_item, void *i_time, char *k_str)
             strncpy (k_str, weekday_korean[lt->tm_wday], strlen (weekday_korean[lt->tm_wday]));
             break;
 
-        case eDAY_DAY:      int_to_korean(lt->tm_mday, k_str);          break;
-        case eDAY_MONTH:    int_to_korean(lt->tm_mon  + 1,    k_str);   break;
-        case eDAY_YEAR:     int_to_korean(lt->tm_year + 1900, k_str);   break;
+        case eDAY_DAY:      int_to_korean_buf (lt->tm_mday, k_str);          break;
+        case eDAY_MONTH:    int_to_korean_buf (lt->tm_mon  + 1,    k_str);   break;
+        case eDAY_YEAR:     int_to_korean_buf (lt->tm_year + 1900, k_str);   break;
         default :
             break;
     }
+}
+
+const char *date_to_korean (enum eDayItem d_item, void *i_time)
+{
+    struct tm *lt;
+    time_t t = time(NULL);
+    const char *weekday_korean[] = { "일", "월", "화", "수", "목", "금", "토" };
+    const char *hour_korean[] = {"영", "한", "두", "세", "네", "다섯", "여섯", "일곱", "여덟", "아홉", "열", "열한", "열두"};
+
+    setenv("TZ", "Asia/Seoul", 1);  // 타임존 설정
+
+    memset (KorString, 0, WTTR_DATA_SIZE);
+
+    if (i_time == NULL) lt = localtime(&t);
+    else                lt = (struct tm *)i_time;
+
+    switch (d_item) {
+        case eDAY_AM_PM:
+            strncpy (KorString, (lt->tm_hour < 12) ? "오전" : "오후", strlen ("오전"));
+            break;
+
+        case eDAY_SEC:      int_to_korean_buf (lt->tm_sec, KorString);   break;
+        case eDAY_MIN:      int_to_korean_buf (lt->tm_min, KorString);   break;
+
+        case eDAY_HOUR:
+            int hour = (lt->tm_hour == 12) ? 12 : lt->tm_hour % 12;
+            strncpy (KorString, hour_korean[hour], strlen (hour_korean[hour]));
+            break;
+
+        case eDAY_W_DAY:
+            strncpy (KorString, weekday_korean[lt->tm_wday], strlen (weekday_korean[lt->tm_wday]));
+            break;
+
+        case eDAY_DAY:      int_to_korean_buf (lt->tm_mday, KorString);          break;
+        case eDAY_MONTH:    int_to_korean_buf (lt->tm_mon  + 1,    KorString);   break;
+        case eDAY_YEAR:     int_to_korean_buf (lt->tm_year + 1900, KorString);   break;
+        default :
+            break;
+    }
+    return (const char *)&KorString[0];
 }
 
 //------------------------------------------------------------------------------
@@ -272,7 +345,7 @@ static size_t WriteMemoryCallback(void *contents, size_t size, size_t nmemb, voi
 }
 
 //------------------------------------------------------------------------------
-// 위,경도 위치 요청
+// 위,경도에 위치한 도시/지역 요청
 //------------------------------------------------------------------------------
 void get_location_json (double lat, double lon, char *g_city, char *g_country, int is_kor)
 {
@@ -353,7 +426,8 @@ void get_location_json (double lat, double lon, char *g_city, char *g_country, i
 //------------------------------------------------------------------------------
 // HTTP 요청 (location = 지역명(한글/영어), "위도,경도")
 //------------------------------------------------------------------------------
-char *get_weather_json (const char *location) {
+char *get_weather_json (const char *location)
+{
     CURL *curl;
     CURLcode res;
     struct MemoryStruct chunk = {malloc(1), 0};
@@ -392,7 +466,7 @@ char *get_weather_json (const char *location) {
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
-// 날씨 파싱 및 출력
+// Json 날씨데이터 파싱 및 저장(WttrData Struct)
 //------------------------------------------------------------------------------
 void parse_weather(const char *json)
 {
@@ -441,27 +515,8 @@ void parse_weather(const char *json)
 }
 
 //------------------------------------------------------------------------------
+// 측정시간[eWTTR_LOBS_DATE] (WttrData struct) 데이터 변환
 //------------------------------------------------------------------------------
-#if 0
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
-int main() {
-    const char* datetime = "2025-05-14 14:42";
-
-    int year, month, day, hour, minute;
-    sscanf(datetime, "%d-%d-%d %d:%d", &year, &month, &day, &hour, &minute);
-
-    printf("%d년 %d월 %d일 %d시 %d분\n", year, month, day, hour, minute);
-
-    return 0;
-}
-
-    struct tm tm_info = {0};
-    strptime(time_str, "%Y-%m-%dT%H:%M", &tm_info);
-#endif
-
 void get_wttr_date (const char *obs_data, struct tm *t)
 {
     // Local Obs Data : "2025-05-20 12:14 PM"
@@ -481,6 +536,8 @@ void get_wttr_date (const char *obs_data, struct tm *t)
     #endif
 }
 
+//------------------------------------------------------------------------------
+// WttrData Struct data 요청
 //------------------------------------------------------------------------------
 const char *get_wttr_data (enum eWttrItem id)
 {
@@ -512,7 +569,6 @@ int update_weather_data (const char *location)
 
     return 1;
 }
-
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------

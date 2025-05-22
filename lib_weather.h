@@ -165,17 +165,24 @@ extern const char* translate_uv_index (const char* index, int is_kor);
 //------------------------------------------------------------------------------
 // 숫자를 한글로 출력
 //------------------------------------------------------------------------------
-extern void int_to_korean (int num, char* output);
+extern void         int_to_korean_buf   (int num, char* output);
+extern const char   *int_to_korean      (int num);
 
 //------------------------------------------------------------------------------
 // 현재시간이나 입력되어진 시간중 원하는 필드의 한글 값을 얻어온다.
 //------------------------------------------------------------------------------
-extern void date_to_korean (enum eDayItem d_item, void *i_time, char *k_str);
+extern void         date_to_korean_buf  (enum eDayItem d_item, void *i_time, char *k_str);
+extern const char   *date_to_korean     (enum eDayItem d_item, void *i_time);
 
 //------------------------------------------------------------------------------
 // 위,경도 도시, 지역 이름요청
 //------------------------------------------------------------------------------
 extern void get_location_json (double lat, double lon, char *g_city, char *g_country, int is_kor);
+
+//------------------------------------------------------------------------------
+// 측정시간[eWTTR_LOBS_DATE] (WttrData struct) 데이터 변환
+//------------------------------------------------------------------------------
+extern void get_wttr_date (const char *obs_data, struct tm *t);
 
 //------------------------------------------------------------------------------
 // 날씨 데이터(wttr) 요청
@@ -186,8 +193,6 @@ extern const char *get_wttr_data (enum eWttrItem id);
 // 날씨 데이어(wttr) 업데이트, location = 지역명 (한글/영어)
 //------------------------------------------------------------------------------
 extern int update_weather_data (const char *location);
-
-extern void get_wttr_date (const char *obs_data, struct tm *t);
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
