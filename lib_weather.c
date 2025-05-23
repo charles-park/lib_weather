@@ -174,7 +174,7 @@ char *url_encode (const char *str) {
 //------------------------------------------------------------------------------
 // 숫자를 한글로 출력
 //------------------------------------------------------------------------------
-void int_to_korean_buf (int num, char* output) {
+void int_to_kor_buf (int num, char* output) {
     const char *digits[] = { "영", "일", "이", "삼", "사", "오", "육", "칠", "팔", "구" };
     char buffer[64] = "", temp[8];
     int digit, pos;
@@ -204,7 +204,7 @@ void int_to_korean_buf (int num, char* output) {
     }
 }
 
-const char *int_to_korean (int num) {
+const char *int_to_kor (int num) {
     const char *digits[] = { "영", "일", "이", "삼", "사", "오", "육", "칠", "팔", "구" };
     char buffer[64] = "", temp[8];
     int digit, pos;
@@ -238,7 +238,7 @@ const char *int_to_korean (int num) {
 //------------------------------------------------------------------------------
 // 현재시간이나 입력되어진 시간중 원하는 필드의 한글 값을 얻어온다.
 //------------------------------------------------------------------------------
-void date_to_korean_buf (enum eDayItem d_item, void *i_time, char *k_str)
+void date_to_kor_buf (enum eDayItem d_item, void *i_time, char *k_str)
 {
     struct tm *lt;
     time_t t = time(NULL);
@@ -257,8 +257,8 @@ void date_to_korean_buf (enum eDayItem d_item, void *i_time, char *k_str)
             strncpy (k_str, (lt->tm_hour < 12) ? "오전" : "오후", strlen ("오전"));
             break;
 
-        case eDAY_SEC:      int_to_korean_buf (lt->tm_sec, k_str);           break;
-        case eDAY_MIN:      int_to_korean_buf (lt->tm_min, k_str);           break;
+        case eDAY_SEC:      int_to_kor_buf (lt->tm_sec, k_str);           break;
+        case eDAY_MIN:      int_to_kor_buf (lt->tm_min, k_str);           break;
 
         case eDAY_HOUR:
             int hour = (lt->tm_hour == 12) ? 12 : lt->tm_hour % 12;
@@ -269,15 +269,15 @@ void date_to_korean_buf (enum eDayItem d_item, void *i_time, char *k_str)
             strncpy (k_str, weekday_korean[lt->tm_wday], strlen (weekday_korean[lt->tm_wday]));
             break;
 
-        case eDAY_DAY:      int_to_korean_buf (lt->tm_mday, k_str);          break;
-        case eDAY_MONTH:    int_to_korean_buf (lt->tm_mon  + 1,    k_str);   break;
-        case eDAY_YEAR:     int_to_korean_buf (lt->tm_year + 1900, k_str);   break;
+        case eDAY_DAY:      int_to_kor_buf (lt->tm_mday, k_str);          break;
+        case eDAY_MONTH:    int_to_kor_buf (lt->tm_mon  + 1,    k_str);   break;
+        case eDAY_YEAR:     int_to_kor_buf (lt->tm_year + 1900, k_str);   break;
         default :
             break;
     }
 }
 
-const char *date_to_korean (enum eDayItem d_item, void *i_time)
+const char *date_to_kor (enum eDayItem d_item, void *i_time)
 {
     struct tm *lt;
     time_t t = time(NULL);
@@ -296,8 +296,8 @@ const char *date_to_korean (enum eDayItem d_item, void *i_time)
             strncpy (KorString, (lt->tm_hour < 12) ? "오전" : "오후", strlen ("오전"));
             break;
 
-        case eDAY_SEC:      int_to_korean_buf (lt->tm_sec, KorString);   break;
-        case eDAY_MIN:      int_to_korean_buf (lt->tm_min, KorString);   break;
+        case eDAY_SEC:      int_to_kor_buf (lt->tm_sec, KorString);   break;
+        case eDAY_MIN:      int_to_kor_buf (lt->tm_min, KorString);   break;
 
         case eDAY_HOUR:
             int hour = (lt->tm_hour == 12) ? 12 : lt->tm_hour % 12;
@@ -308,9 +308,9 @@ const char *date_to_korean (enum eDayItem d_item, void *i_time)
             strncpy (KorString, weekday_korean[lt->tm_wday], strlen (weekday_korean[lt->tm_wday]));
             break;
 
-        case eDAY_DAY:      int_to_korean_buf (lt->tm_mday, KorString);          break;
-        case eDAY_MONTH:    int_to_korean_buf (lt->tm_mon  + 1,    KorString);   break;
-        case eDAY_YEAR:     int_to_korean_buf (lt->tm_year + 1900, KorString);   break;
+        case eDAY_DAY:      int_to_kor_buf (lt->tm_mday, KorString);          break;
+        case eDAY_MONTH:    int_to_kor_buf (lt->tm_mon  + 1,    KorString);   break;
+        case eDAY_YEAR:     int_to_kor_buf (lt->tm_year + 1900, KorString);   break;
         default :
             break;
     }

@@ -62,36 +62,32 @@ int main(int argc, char *argv[]) {
 
         char kor_str[WTTR_DATA_SIZE];
 
-        int_to_korean_buf (atoi(get_wttr_data (eWTTR_TEMP_FEEL)), kor_str);
+        // void date_to_kor_buf (enum eDayItem d_item, void *i_time, char *k_str)
+        int_to_kor_buf (atoi(get_wttr_data (eWTTR_TEMP_FEEL)), kor_str);
         printf ("체감온도 : %s도씨\n", kor_str);
 
         {
             struct tm t;
 
             get_wttr_date (get_wttr_data (eWTTR_LOBS_DATE), &t);
-            // void date_to_korean (enum eDayItem d_item, void *i_time, char *k_str)
-            date_to_korean_buf (eDAY_HOUR, (void *)&t, kor_str);
-            printf ("측정시간 : %s시\n", kor_str);
-            date_to_korean_buf (eDAY_HOUR, NULL, kor_str);
-            printf ("현재시간 : %s시\n", kor_str);
-
+            // void date_to_kor     (enum eDayItem d_item, void *i_time, char *k_str)
             printf ("측정시간 : ");
-            printf ("%s년 ", date_to_korean (eDAY_YEAR, (void *)&t));
-            printf ("%s월 ", date_to_korean (eDAY_MONTH, (void *)&t));
-            printf ("%s일 ", date_to_korean (eDAY_DAY, (void *)&t));
-            printf ("%s요일 ", date_to_korean (eDAY_W_DAY, (void *)&t));
-            printf ("%s ", date_to_korean (eDAY_AM_PM, (void *)&t));
-            printf ("%s시 ", date_to_korean (eDAY_HOUR, (void *)&t));
-            printf ("%s분\n", date_to_korean (eDAY_MIN, (void *)&t));
+            printf ("%s년 ", date_to_kor (eDAY_YEAR, (void *)&t));
+            printf ("%s월 ", date_to_kor (eDAY_MONTH, (void *)&t));
+            printf ("%s일 ", date_to_kor (eDAY_DAY, (void *)&t));
+            printf ("%s요일 ", date_to_kor (eDAY_W_DAY, (void *)&t));
+            printf ("%s ", date_to_kor (eDAY_AM_PM, (void *)&t));
+            printf ("%s시 ", date_to_kor (eDAY_HOUR, (void *)&t));
+            printf ("%s분\n", date_to_kor (eDAY_MIN, (void *)&t));
 
             printf ("현재시간 : ");
-            printf ("%s년 ", date_to_korean (eDAY_YEAR, NULL));
-            printf ("%s월 ", date_to_korean (eDAY_MONTH, NULL));
-            printf ("%s일 ", date_to_korean (eDAY_DAY, NULL));
-            printf ("%s요일 ", date_to_korean (eDAY_W_DAY, NULL));
-            printf ("%s ", date_to_korean (eDAY_AM_PM, NULL));
-            printf ("%s시 ", date_to_korean (eDAY_HOUR, NULL));
-            printf ("%s분\n", date_to_korean (eDAY_MIN, NULL));
+            printf ("%s년 ", date_to_kor (eDAY_YEAR, NULL));
+            printf ("%s월 ", date_to_kor (eDAY_MONTH, NULL));
+            printf ("%s일 ", date_to_kor (eDAY_DAY, NULL));
+            printf ("%s요일 ", date_to_kor (eDAY_W_DAY, NULL));
+            printf ("%s ", date_to_kor (eDAY_AM_PM, NULL));
+            printf ("%s시 ", date_to_kor (eDAY_HOUR, NULL));
+            printf ("%s분\n", date_to_kor (eDAY_MIN, NULL));
         }
     }
     return 0;

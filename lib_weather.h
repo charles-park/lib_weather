@@ -165,14 +165,14 @@ extern const char* translate_uv_index (const char* index, int is_kor);
 //------------------------------------------------------------------------------
 // 숫자를 한글로 출력
 //------------------------------------------------------------------------------
-extern void         int_to_korean_buf   (int num, char* output);
-extern const char   *int_to_korean      (int num);
+extern void         int_to_kor_buf  (int num, char* output);
+extern const char   *int_to_kor     (int num);
 
 //------------------------------------------------------------------------------
 // 현재시간이나 입력되어진 시간중 원하는 필드의 한글 값을 얻어온다.
 //------------------------------------------------------------------------------
-extern void         date_to_korean_buf  (enum eDayItem d_item, void *i_time, char *k_str);
-extern const char   *date_to_korean     (enum eDayItem d_item, void *i_time);
+extern void         date_to_kor_buf (enum eDayItem d_item, void *i_time, char *k_str);
+extern const char   *date_to_kor    (enum eDayItem d_item, void *i_time);
 
 //------------------------------------------------------------------------------
 // 위,경도 도시, 지역 이름요청
