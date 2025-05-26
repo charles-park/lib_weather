@@ -376,7 +376,7 @@ void get_location_json (double lat, double lon, char *g_city, char *g_country, i
         if (json) {
             cJSON *address = cJSON_GetObjectItemCaseSensitive(json, "address");
             if (address) {
-                const char *city = NULL, *state = NULL, *country = NULL;
+                const char *city = NULL, *country = NULL;
 
                 cJSON *fields_city[] = {
                     cJSON_GetObjectItemCaseSensitive(address, "city"),
@@ -391,13 +391,15 @@ void get_location_json (double lat, double lon, char *g_city, char *g_country, i
                     }
                 }
 
-                state = cJSON_GetObjectItemCaseSensitive(address, "state") ?
-                        cJSON_GetObjectItemCaseSensitive(address, "state")->valuestring : NULL;
-
                 country = cJSON_GetObjectItemCaseSensitive(address, "country") ?
                           cJSON_GetObjectItemCaseSensitive(address, "country")->valuestring : NULL;
 
                 #if defined (__LIB_WEATHER_DEBUG__)
+                    const char *state = NULL;
+
+                    state = cJSON_GetObjectItemCaseSensitive(address, "state") ?
+                            cJSON_GetObjectItemCaseSensitive(address, "state")->valuestring : NULL;
+
                     printf("\n[위치 정보]\n");
                     printf("도시:   %s\n", city ? city : "(정보 없음)");
                     printf("지역:   %s\n", state ? state : "(정보 없음)");
