@@ -470,7 +470,7 @@ void get_wttr_date (const char *obs_data, struct tm *t)
 {
     // Local Obs Data : "2025-05-20 12:14 PM"
     strptime (obs_data, "%Y-%m-%d %I:%M %p", t);
-    mktime (t);  // 자동으로 overflow 조정
+    /* mktime (t);  // 자동으로 overflow 조정 */
 
     #if defined (__LIB_WEATHER_DEBUG__)
         printf("관측 시각: %d년 %d월 %d일 %d시 %d분 %d요일 %d일/356일\n",
