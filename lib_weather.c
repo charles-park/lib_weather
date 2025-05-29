@@ -204,34 +204,12 @@ void int_to_kor_buf (int num, char* output) {
     }
 }
 
-const char *int_to_kor (int num) {
-    const char *digits[] = { "영", "일", "이", "삼", "사", "오", "육", "칠", "팔", "구" };
-    char buffer[64] = "", temp[8];
-    int digit, pos;
-
-    sprintf(buffer, "%d", num);
+const char *int_to_kor (int num)
+{
     memset (KorString, 0, WTTR_DATA_SIZE);
 
-    if (!num)   {
-        sprintf (KorString, "%s", digits[0]);
-        return (const char *)&KorString[0];
-    }
+    int_to_kor_buf (num, KorString) ;
 
-    for (size_t i = 0, place = strlen(buffer); i < strlen(buffer); i++, place--) {
-        digit = buffer[i] - '0';
-        temp[0] = '\0';
-
-        if (digit) {
-            pos = (digit == 1) ? 0 : sprintf(temp, "%s", digits[digit]);
-            switch (place) {
-                case 5: sprintf(&temp[pos], "%s", "만");  break;
-                case 4: sprintf(&temp[pos], "%s", "천");  break;
-                case 3: sprintf(&temp[pos], "%s", "백");  break;
-                case 2: sprintf(&temp[pos], "%s", "십");  break;
-            }
-            strcat(KorString, temp);
-        }
-    }
     return (const char *)&KorString[0];
 }
 
@@ -279,41 +257,10 @@ void date_to_kor_buf (enum eDayItem d_item, void *i_time, char *k_str)
 
 const char *date_to_kor (enum eDayItem d_item, void *i_time)
 {
-    struct tm *lt;
-    time_t t = time(NULL);
-    const char *weekday_korean[] = { "일", "월", "화", "수", "목", "금", "토" };
-    const char *hour_korean[] = {"영", "한", "두", "세", "네", "다섯", "여섯", "일곱", "여덟", "아홉", "열", "열한", "열두"};
-
-    setenv("TZ", "Asia/Seoul", 1);  // 타임존 설정
-
     memset (KorString, 0, WTTR_DATA_SIZE);
 
-    if (i_time == NULL) lt = localtime(&t);
-    else                lt = (struct tm *)i_time;
+    date_to_kor_buf (d_item, i_time, KorString);
 
-    switch (d_item) {
-        case eDAY_AM_PM:
-            strncpy (KorString, (lt->tm_hour < 12) ? "오전" : "오후", strlen ("오전"));
-            break;
-
-        case eDAY_SEC:      int_to_kor_buf (lt->tm_sec, KorString);   break;
-        case eDAY_MIN:      int_to_kor_buf (lt->tm_min, KorString);   break;
-
-        case eDAY_HOUR:
-            int hour = (lt->tm_hour == 12) ? 12 : lt->tm_hour % 12;
-            strncpy (KorString, hour_korean[hour], strlen (hour_korean[hour]));
-            break;
-
-        case eDAY_W_DAY:
-            strncpy (KorString, weekday_korean[lt->tm_wday], strlen (weekday_korean[lt->tm_wday]));
-            break;
-
-        case eDAY_DAY:      int_to_kor_buf (lt->tm_mday, KorString);          break;
-        case eDAY_MONTH:    int_to_kor_buf (lt->tm_mon  + 1,    KorString);   break;
-        case eDAY_YEAR:     int_to_kor_buf (lt->tm_year + 1900, KorString);   break;
-        default :
-            break;
-    }
     return (const char *)&KorString[0];
 }
 
